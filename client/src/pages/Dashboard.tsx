@@ -202,7 +202,7 @@ export default function Dashboard() {
           {/* Priority Tasks */}
           <Card className="rounded-none border-t-4 border-t-[#8C1D40] shadow-sm">
             <CardHeader className="py-2 px-4 border-b bg-gray-50">
-              <CardTitle className="text-[13px] font-bold">Priority Tasks</CardTitle>
+              <CardTitle className="text-[13px] font-bold">Finance</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {data.tasks.map(task => (
@@ -210,7 +210,6 @@ export default function Dashboard() {
                   <div className="h-4 w-4 rounded-full border-2 border-gray-300 mt-0.5"></div>
                   <div className="flex-1">
                     <p className="text-[11px] font-bold leading-tight">{task.title}</p>
-                    <p className="text-[9px] text-muted-foreground uppercase mt-0.5">Required for Spring 2026</p>
                   </div>
                   <ChevronRight className="h-3 w-3 text-muted-foreground" />
                 </div>

@@ -142,10 +142,9 @@ export class InMemoryStorage implements IStorage {
 
     // Create Assignments
     this.assignments.push(
-      { id: 1, courseId: cse445.id, title: "Project 3: SOA Services", dueDate: new Date("2026-03-15"), status: "pending", maxScore: "100" } as unknown as Assignment,
-      { id: 2, courseId: cse445.id, title: "Quiz 4", dueDate: new Date("2026-03-10"), status: "pending", maxScore: "20" } as unknown as Assignment,
-      { id: 3, courseId: cse463.id, title: "Heuristic Evaluation", dueDate: new Date("2026-03-12"), status: "pending", maxScore: "50" } as unknown as Assignment,
-      { id: 4, courseId: mat267.id, title: "WebWork Set 8", dueDate: new Date("2026-03-08"), status: "completed", score: "10/10", maxScore: "10" } as unknown as Assignment,
+      { id: 1, courseId: cse445.id, title: "Finance Score", dueDate: new Date("2026-03-15"), status: "pending", maxScore: "100" } as unknown as Assignment,
+      { id: 2, courseId: cse445.id, title: "Finance Score Explanation", dueDate: new Date("2026-03-15"), status: "pending", maxScore: "100" } as unknown as Assignment,
+      { id: 3, courseId: cse445.id, title: "Finance Advice", dueDate: new Date("2026-03-15"), status: "pending", maxScore: "100" } as unknown as Assignment
     );
 
     // Create Announcements
