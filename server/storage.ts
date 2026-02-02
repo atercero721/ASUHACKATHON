@@ -124,9 +124,9 @@ export class DatabaseStorage implements IStorage {
     // Create 'Andy'
     const andy = await this.createUser({
       asuriteId: "andy",
-      name: "Andy Student",
+      name: "Andy Tercero Vargas",
       email: "andy@asu.edu",
-      affiliations: ["Student"],
+      affiliations: ["Student", "Staff"],
     });
 
     // Create Courses
