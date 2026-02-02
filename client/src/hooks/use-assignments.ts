@@ -18,7 +18,8 @@ export function useUpdateAssignment() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: number } & z.infer<typeof insertAssignmentSchema>) => {
+    // allow partial updates (only status is required for toggles)
+    mutationFn: async ({ id, ...updates }: { id: number } & Partial<z.infer<typeof insertAssignmentSchema>>) => {
       const url = buildUrl(api.assignments.update.path, { id });
       const validated = api.assignments.update.input.parse(updates);
       
