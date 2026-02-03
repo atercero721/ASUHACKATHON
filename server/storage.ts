@@ -121,7 +121,7 @@ export class InMemoryStorage implements IStorage {
     // Create 'Andy'
     const andy = await this.createUser({
       asuriteId: "andy",
-      name: "Andy Tercero Vargas",
+      name: "Andy",
       email: "andy@asu.edu",
       affiliations: ["Student", "Staff"],
     });

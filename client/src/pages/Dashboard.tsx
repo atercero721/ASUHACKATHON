@@ -6,10 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, User, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { Search, User, ChevronRight, ChevronDown } from "lucide-react";
 
 export default function Dashboard() {
   const { data, isLoading } = useDashboard();
+  const [financeOpen, setFinanceOpen] = useState(true); // true = expanded by default
+  const [openTaskId, setOpenTaskId] = useState<number | null>(null);
+
+
 
   if (isLoading || !data) {
     return (
@@ -25,7 +30,7 @@ export default function Dashboard() {
       <header className="bg-[#8C1D40] text-white py-2 px-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <img src="https://www.asu.edu/asuthemes/7.0/assets/img/asu-logo-white.png" alt="ASU Logo" className="h-8" />
+            <img src="asu logo.png" alt="ASU Logo" className="h-8" />
             <span className="text-xl font-bold border-l pl-3 ml-1">My ASU</span>
           </div>
           <div className="relative ml-8 hidden md:block">
@@ -200,22 +205,76 @@ export default function Dashboard() {
         {/* Right Column */}
         <div className="lg:col-span-4 space-y-6">
           {/* Priority Tasks */}
+          
           <Card className="rounded-none border-t-4 border-t-[#8C1D40] shadow-sm">
-            <CardHeader className="py-2 px-4 border-b bg-gray-50">
-              <CardTitle className="text-[13px] font-bold">Finance</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {data.tasks.map(task => (
-                <div key={task.id} className="p-3 border-b flex items-start gap-3 hover:bg-black/5 cursor-pointer">
-                  <div className="h-4 w-4 rounded-full border-2 border-gray-300 mt-0.5"></div>
-                  <div className="flex-1">
-                    <p className="text-[11px] font-bold leading-tight">{task.title}</p>
-                  </div>
-                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+  <CardHeader className="py-2 px-4 border-b bg-gray-50">
+    <button
+      type="button"
+      onClick={() => setFinanceOpen((v) => !v)}
+      className="w-full flex items-center justify-between"
+      aria-expanded={financeOpen}
+    >
+      <CardTitle className="text-[13px] font-bold">Finance</CardTitle>
+      <ChevronDown
+        className={`h-4 w-4 text-muted-foreground transition-transform ${
+          financeOpen ? "rotate-180" : ""
+        }`}
+      />
+    </button>
+  </CardHeader>
+
+  {financeOpen && (
+    <CardContent className="p-0">
+      {data.tasks.map((task) => {
+  const isOpen = openTaskId === task.id;
+
+  return (
+    <div key={task.id} className="border-b">
+      {/* Task header */}
+      <button
+        type="button"
+        onClick={() =>
+          setOpenTaskId(isOpen ? null : task.id)
+        }
+        className="w-full p-3 flex items-start gap-3 hover:bg-black/5 text-left"
+      >
+        <div className="h-4 w-4 rounded-full border-2 border-gray-300 mt-0.5"></div>
+
+        <div className="flex-1">
+          <p className="text-[11px] font-bold leading-tight">
+            {task.title}
+          </p>
+        </div>
+
+        <ChevronDown
+          className={`h-3 w-3 text-muted-foreground transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {/* Task dropdown content */}
+      {isOpen && (
+        <div className="px-10 pb-3 text-[10px] text-muted-foreground">
+          {/* Placeholder content — customize later */}
+          <p>
+            Due date:{" "}
+            {task.dueDate
+              ? new Date(task.dueDate).toLocaleDateString()
+              : "N/A"}
+          </p>
+          <p>Status: {task.status}</p>
+          <p>Summary: {task.maxScore}</p>
+        </div>
+      )}
+    </div>
+  );
+})}
+
+    </CardContent>
+  )}
+</Card>
+
 
           {/* My Programs */}
           <Card className="rounded-none border-t-4 border-t-[#8C1D40] shadow-sm">
