@@ -1,19 +1,33 @@
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({
+  path: path.resolve(__dirname, "../.env.local"), // 👈 ROOT .env.local
+});
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 
+//dotenv.config({ path: ".env.local" });
+
 // server/index.ts
 import chatgptRoute from "./chatgpt";
+
+console.log("hi from server index.ts");
+console.log("OPENAI KEY LOADED:", !!process.env.OPENAI_API_KEY);
+
+
 
 const app = express();
 
 app.use(express.json());
 app.use("/api", chatgptRoute);
-
-app.listen(3001, () => {
-  console.log("Server running on http://localhost:3001");
-});
 
 
 const httpServer = createServer(app);
@@ -35,7 +49,7 @@ async function askChatGPT(input: string) {
   return data.text;
 }
 
-console.log(askChatGPT("Hello chadgpt"))
+//console.log(askChatGPT("Hello chadgpt"))
 
 app.use(
   express.json({

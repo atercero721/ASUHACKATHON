@@ -13,6 +13,35 @@ export default function Dashboard() {
   const { data, isLoading } = useDashboard();
   const [financeOpen, setFinanceOpen] = useState(true); // true = expanded by default
   const [openTaskId, setOpenTaskId] = useState<number | null>(null);
+  
+  const [aiInsights, setAiInsights] = useState<Record<number, string>>({});
+  const [aiLoading, setAiLoading] = useState<number | null>(null);
+
+
+  async function fetchFinanceInsight(task: any) {
+  setAiLoading(task.id);
+
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      input: `Explain this financial task for a student and give advice:
+      Title: ${task.title}
+      Status: ${task.status}
+      Due date: ${task.dueDate}
+      `,
+    }),
+  });
+
+  const data = await res.json();
+
+  setAiInsights((prev) => ({
+    ...prev,
+    [task.id]: data.text,
+  }));
+
+  setAiLoading(null);
+}
 
 
 
@@ -58,7 +87,7 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
-
+      
       {/* Main Navigation - Gold */}
       <nav className="bg-[#FFC627] border-b border-black/10">
         <div className="container mx-auto px-4 flex gap-1">
@@ -233,9 +262,13 @@ export default function Dashboard() {
       {/* Task header */}
       <button
         type="button"
-        onClick={() =>
-          setOpenTaskId(isOpen ? null : task.id)
-        }
+        onClick={() => {
+          if (!isOpen && !aiInsights[task.id]) {
+            fetchFinanceInsight(task);
+          }
+          setOpenTaskId(isOpen ? null : task.id);
+        }}
+
         className="w-full p-3 flex items-start gap-3 hover:bg-black/5 text-left"
       >
         <div className="h-4 w-4 rounded-full border-2 border-gray-300 mt-0.5"></div>
@@ -264,7 +297,14 @@ export default function Dashboard() {
               : "N/A"}
           </p>
           <p>Status: {task.status}</p>
-          <p>Summary: {task.maxScore}</p>
+          {aiLoading === task.id ? (
+            <p className="italic text-muted-foreground">Analyzing your finances…</p>
+          ) : (
+            <p className="whitespace-pre-line">
+              {aiInsights[task.id]}
+            </p>
+          )}
+
         </div>
       )}
     </div>
