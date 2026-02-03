@@ -3,7 +3,19 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 
+// server/index.ts
+import chatgptRoute from "./chatgpt";
+
 const app = express();
+
+app.use(express.json());
+app.use("/api", chatgptRoute);
+
+app.listen(3001, () => {
+  console.log("Server running on http://localhost:3001");
+});
+
+
 const httpServer = createServer(app);
 
 declare module "http" {
@@ -11,6 +23,19 @@ declare module "http" {
     rawBody: unknown;
   }
 }
+
+async function askChatGPT(input: string) {
+  const res = await fetch("http://localhost:3001/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ input }),
+  });
+
+  const data = await res.json();
+  return data.text;
+}
+
+console.log(askChatGPT("Hello chadgpt"))
 
 app.use(
   express.json({
