@@ -1,20 +1,118 @@
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+import fetch from "node-fetch";
+import cors from "cors";
+import { spawn } from "child_process";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
+
+
+const payload = {
+  "name": "Student",
+  "valid housing contract": "Yes",
+  "missing payment plan": "No",
+  "reduced aid": "No",
+  "SAP warning": "No",
+  "on-campus job": "Yes",
+  "work restriction": "Yes",
+  "late fees": "No",
+  "meal plan cancellation": "Yes",
+  "course withdrawal after deadline": "Yes",
+  "missed financial advising appointments": "Yes",
+  "dropped gpa": "Yes",
+  "first-gen student": "Yes",
+  "transfer student": "No",
+  "prior emergency aid usage": "Yes",
+  "student returning from break": "No"
+}
+
+
+
+dotenv.config({
+  path: path.resolve(__dirname, "../.env.local"), // 👈 ROOT .env.local
+});
+
+
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 
+
+
+//dotenv.config({ path: ".env.local" });
+
 // server/index.ts
 import chatgptRoute from "./chatgpt";
 
+console.log("hi from server index.ts");
+console.log("OPENAI KEY LOADED:", !!process.env.OPENAI_API_KEY);
+
+
+
 const app = express();
 
-app.use(express.json());
-app.use("/api", chatgptRoute);
 
-app.listen(3001, () => {
-  console.log("Server running on http://localhost:3001");
+app.use(cors());
+
+app.use(express.json());
+
+app.post("/predict", (req: Request, res: Response) => {
+  console.log("Received /predict request with body:", req.body);
+  const payload = req.body;
+  const scriptPath = path.join(__dirname, "ml", "predict.py");
+
+  // Spawn a new Python process per request
+  const py = spawn("python", [scriptPath]);
+
+  let dataString = "";
+
+  py.stdout.on("data", (data) => {
+    dataString += data.toString();
+  });
+
+  py.stderr.on("data", (data) => {
+    console.error("Python stderr:", data.toString());
+  });
+
+  py.on("error", (err) => {
+    console.error("Failed to start Python process:", err);
+    res.status(500).json({ error: "Failed to start Python process" });
+  });
+
+  py.on("close", (code) => {
+    if (!dataString) {
+      return res.status(500).json({ error: "Python process exited with code " + code });
+    }
+
+    try {
+      const result = JSON.parse(dataString);
+      res.json(result); // send prediction to client
+    } catch (e: unknown) {
+      let message = "Unknown error";
+      if (e instanceof Error) {
+        message = e.message;
+      }
+      res.status(500).json({ error: "Failed to parse Python output", details: message });
+    }
+  });
+
+  // Send JSON payload to Python stdin
+  py.stdin.write(JSON.stringify(payload));
+  py.stdin.end();
 });
 
+
+app.listen(3001, () => {
+  console.log("Server is running on port 3001");
+});
+
+app.use("/api", chatgptRoute);
 
 const httpServer = createServer(app);
 
@@ -24,18 +122,37 @@ declare module "http" {
   }
 }
 
-async function askChatGPT(input: string) {
-  const res = await fetch("http://localhost:3001/api/chat", {
+async function testMLPrediction() {
+  const payload = {
+    "name": "Student",
+    "valid housing contract": "Yes",
+    "missing payment plan": "No",
+    "reduced aid": "No",
+    "SAP warning": "No",
+    "on-campus job": "Yes",
+    "work restriction": "Yes",
+    "late fees": "No",
+    "meal plan cancellation": "Yes",
+    "course withdrawal after deadline": "Yes",
+    "missed financial advising appointments": "Yes",
+    "dropped gpa": "Yes",
+    "first-gen student": "Yes",
+    "transfer student": "No",
+    "prior emergency aid usage": "Yes",
+    "student returning from break": "No"
+  };
+
+  const res = await fetch("http://localhost:3001/predict", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ input }),
+    body: JSON.stringify(payload),
   });
 
   const data = await res.json();
-  return data.text;
+  console.log("Simulated ML Prediction:", data);
 }
 
-console.log(askChatGPT("Hello chadgpt"))
+//console.log(askChatGPT("Hello chadgpt"))
 
 app.use(
   express.json({
@@ -128,5 +245,9 @@ app.use((req, res, next) => {
 
   httpServer.listen(listenOptions, () => {
     log(`serving on port ${port}`);
+
+    
+    testMLPrediction();
+
   });
 })();

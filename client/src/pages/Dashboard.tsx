@@ -6,13 +6,103 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, User, ChevronRight, ChevronDown } from "lucide-react";
 
 export default function Dashboard() {
   const { data, isLoading } = useDashboard();
   const [financeOpen, setFinanceOpen] = useState(true); // true = expanded by default
-  const [openTaskId, setOpenTaskId] = useState<number | null>(null);
+  const [openTaskId, setOpenTaskId] = useState<string | null>(null);
+  
+  const [aiInsights, setAiInsights] = useState<Record<number, string>>({});
+  const [aiLoading, setAiLoading] = useState<number | null>(null);
+  const [mlPrediction, setMlPrediction] = useState<number | null>(null);
+
+const payload = {
+  "name": "aaaa",
+  "valid housing contract": "Yes",
+  "missing payment plan": "No",
+  "reduced aid": "No",
+  "SAP warning": "No",
+  "on-campus job": "Yes",
+  "work restriction": "Yes",
+  "late fees": "No",
+  "meal plan cancellation": "Yes",
+  "course withdrawal after deadline": "Yes",
+  "missed financial advising appointments": "Yes",
+  "dropped gpa": "Yes",
+  "first-gen student": "Yes",
+  "transfer student": "No",
+  "prior emergency aid usage": "Yes",
+  "student returning from break": "No"
+}
+
+async function fetchMLPrediction() {
+  try {
+    console.log("Starting fetch to /predict...");
+
+    const res = await fetch("http://localhost:3001/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    console.log("Fetch completed. Status:", res.status, res.statusText);
+
+    if (!res.ok) {
+      // If response status is not 2xx
+      const text = await res.text(); // grab raw response
+      console.error("Server responded with error:", text);
+      return;
+    }
+
+    const data = await res.json();
+    console.log("ML Prediction:", data);
+
+    setMlPrediction(data.score);
+  } catch (err) {
+    console.error("Fetch failed:", err);
+  }
+}
+
+useEffect(() => {
+  fetchMLPrediction();
+}, []);
+
+
+function getScoreColor(score: number | null) {
+  if (score === null) return "gray";
+  if (score >= 90) return "green";
+  if (score > 51) return "orange";
+  if (score <= 50) return "red";
+  return "gray";
+}
+  async function fetchFinanceInsight(task: any) {
+  setAiLoading(task.id);
+
+
+
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      input: `Explain this financial task for a student and give advice:
+      Title: ${task.title}
+      Status: ${task.status}
+      Due date: ${task.dueDate}
+      `,
+    }),
+  });
+
+  const data = await res.json();
+
+  setAiInsights((prev) => ({
+    ...prev,
+    [task.id]: data.text,
+  }));
+
+  setAiLoading(null);
+}
 
 
 
@@ -58,7 +148,7 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
-
+      
       {/* Main Navigation - Gold */}
       <nav className="bg-[#FFC627] border-b border-black/10">
         <div className="container mx-auto px-4 flex gap-1">
@@ -225,51 +315,85 @@ export default function Dashboard() {
 
   {financeOpen && (
     <CardContent className="p-0">
-      {data.tasks.map((task) => {
-  const isOpen = openTaskId === task.id;
+      <div className="border-b">
+        <button
+          type="button"
+          onClick={() => setOpenTaskId(openTaskId === "finance-1" ? null : "finance-1")}
+          className="w-full p-3 flex items-start gap-3 hover:bg-black/5 text-left"
+        >
+          <div
+            className="h-4 w-4 rounded-full border-2 border-gray-300 mt-0.5"
+            style={{ backgroundColor: getScoreColor(mlPrediction) }}
+          ></div>
+          <div className="flex-1">
+            <p className="text-[11px] font-bold leading-tight">Finance Score</p>
+          </div>
+          <ChevronDown
+            className={`h-3 w-3 text-muted-foreground transition-transform ${
+              openTaskId === "finance-1" ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+        {openTaskId === "finance-1" && (
+          <div className="px-10 pb-3 text-[13px] text-muted-foreground">
+            <p>You have a finance score of {mlPrediction}</p>
+          </div>
+        )}
+      </div>
 
-  return (
-    <div key={task.id} className="border-b">
-      {/* Task header */}
-      <button
-        type="button"
-        onClick={() =>
-          setOpenTaskId(isOpen ? null : task.id)
-        }
-        className="w-full p-3 flex items-start gap-3 hover:bg-black/5 text-left"
-      >
-        <div className="h-4 w-4 rounded-full border-2 border-gray-300 mt-0.5"></div>
+      <div className="border-b">
+        <button
+          type="button"
+          onClick={() => setOpenTaskId(openTaskId === "finance-2" ? null : "finance-2")}
+          className="w-full p-3 flex items-start gap-3 hover:bg-black/5 text-left"
+        >
+          <div
+            className="h-4 w-4 rounded-full border-2 border-gray-300 mt-0.5"
+          ></div>
+          <div className="flex-1">
+            <p className="text-[11px] font-bold leading-tight">Score Reasoning</p>
+          </div>
+          <ChevronDown
+            className={`h-3 w-3 text-muted-foreground transition-transform ${
+              openTaskId === "finance-2" ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+        {openTaskId === "finance-2" && (
+          <div className="px-10 pb-3 text-[13px] text-muted-foreground">
+            <p>Enrollment in Payment Plan.</p>
+            <p>Cancelled Housing Contract.</p>
+            {/* <p className="whitespace-pre-line">Finish your renewal to avoid delays in aid disbursement.</p> */}
+          </div>
+        )}
+      </div>
 
-        <div className="flex-1">
-          <p className="text-[11px] font-bold leading-tight">
-            {task.title}
-          </p>
-        </div>
-
-        <ChevronDown
-          className={`h-3 w-3 text-muted-foreground transition-transform ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      {/* Task dropdown content */}
-      {isOpen && (
-        <div className="px-10 pb-3 text-[10px] text-muted-foreground">
-          {/* Placeholder content — customize later */}
-          <p>
-            Due date:{" "}
-            {task.dueDate
-              ? new Date(task.dueDate).toLocaleDateString()
-              : "N/A"}
-          </p>
-          <p>Status: {task.status}</p>
-          <p>Summary: {task.maxScore}</p>
-        </div>
-      )}
-    </div>
-  );
-})}
+      <div className="border-b">
+        <button
+          type="button"
+          onClick={() => setOpenTaskId(openTaskId === "finance-3" ? null : "finance-3")}
+          className="w-full p-3 flex items-start gap-3 hover:bg-black/5 text-left"
+        >
+          <div
+            className="h-4 w-4 rounded-full border-2 border-gray-300 mt-0.5"
+          ></div>
+          <div className="flex-1">
+            <p className="text-[11px] font-bold leading-tight">Financial Assistance</p>
+          </div>
+          <ChevronDown
+            className={`h-3 w-3 text-muted-foreground transition-transform ${
+              openTaskId === "finance-3" ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+        {openTaskId === "finance-3" && (
+          <div className="px-10 pb-3 text-[13px] text-muted-foreground">
+            <p>Learn more about <a href="https://tuition.asu.edu/financial-aid/loans/emergency-loans" className="text-blue-600 underline">Emergency Loans</a></p>
+            <p>Learn more about <a href="https://housing.asu.edu/continuing-student-housing" className="text-blue-600 underline">Student Financial Assistance</a></p>
+            {/* <p className="whitespace-pre-line">Log this month’s savings and set a small goal for next month.</p> */}
+          </div>
+        )}
+      </div>
 
     </CardContent>
   )}
